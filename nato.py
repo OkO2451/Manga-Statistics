@@ -25,7 +25,7 @@ for i in range(1,51):
     # parse the html
     soup = BeautifulSoup(html,"html")
     # get the list of manga
-    manga_list = soup.find_all("div", class_="content-homepage-item")
+    manga_list = soup.find_all("div", class_="content-genres-item") # thought tthat the home page was the same as the genre page
     # the dictionary is already created 
     # TODO: make the dictionary a class
     for manga in manga_list:
@@ -68,15 +68,18 @@ for name, url in dict.items():
         manga_page = requests.get(url)
         manga_soup = BeautifulSoup(manga_page.text,"html")
         manga_info = manga_soup.find("table", class_="variations-tableInfo")
-        dictManga["name"] = name
-        dictManga["genre"] = manga_info.find_all("tr")[3].find("td", class_="table-value").text.strip().replace(" ","")
-        dictManga["author"] = manga_info.find_all("tr")[1].find("td", class_="table-value").text 
-        dictManga["status"] = manga_info.find_all("tr")[2].find("td", class_="table-value").text
-        dictManga["alt_title"] = manga_info.find_all("tr")[0].find("td", class_="table-value").text
-        dictManga["views"] = manga_soup.find_all("span",class_="stre-value")[1].text
-        dictManga["score"] = manga_soup.find_all("em")[7].text.strip()
-        dictManga["nb_votes"] = manga_soup.find_all("em")[9].text
-        mangaData = pd.concat([mangaData, pd.DataFrame([dictManga])], ignore_index=True)
+        if len(manga_info.find_all("tr")) >= 4:
+            # tanslk to get the info
+            # TODO : find why the len error happens and fix it
+            dictManga["name"] = name
+            dictManga["genre"] = manga_info.find_all("tr")[3].find("td", class_="table-value").text.strip().replace(" ","")
+            dictManga["author"] = manga_info.find_all("tr")[1].find("td", class_="table-value").text 
+            dictManga["status"] = manga_info.find_all("tr")[2].find("td", class_="table-value").text
+            dictManga["alt_title"] = manga_info.find_all("tr")[0].find("td", class_="table-value").text
+            dictManga["views"] = manga_soup.find_all("span",class_="stre-value")[1].text
+            dictManga["score"] = manga_soup.find_all("em")[7].text.strip()
+            dictManga["nb_votes"] = manga_soup.find_all("em")[9].text
+            mangaData = pd.concat([mangaData, pd.DataFrame([dictManga])], ignore_index=True)
     # get the manga chapters
 
     list = manga_soup.find_all("li", class_="a-h") 
@@ -88,10 +91,11 @@ for name, url in dict.items():
         dictChapter["views"] = a.find('span', {'class': 'chapter-view'}).text
         dictChapter["date"] = a.find('span', {'class': 'chapter-time'})["title"]
         # add to the dataframe
-        chapterData = chapterData.append(dictChapter,ignore_index=True)
+        chapterData = pd.concat([chapterData, pd.DataFrame([dictChapter])], ignore_index=True)
+    # print the number of rows
+    print(f"mangaData: {mangaData.shape[0]} || chapterData: {chapterData.shape[0]}")
 
 
-
-
-
-    break
+# save the dataframes
+chapterData.to_csv("chapterData.csv")
+mangaData.to_csv("mangaData.csv")
